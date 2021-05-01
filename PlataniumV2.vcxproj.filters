@@ -27,9 +27,6 @@
     <ClInclude Include="hooks.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="veh.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="url.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -48,12 +45,18 @@
     <ClInclude Include="xorstr.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="veh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="pch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="veh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -2,6 +2,8 @@
 
 #include "xorstr.hpp"
 
+#define NOMINMAX
+
 #include <Windows.h>
 #include <inttypes.h>
 #include <psapi.h>
@@ -11,4 +13,3 @@
 #include <string>
 #include <map>
 #include <vector>
-

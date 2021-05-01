@@ -4,9 +4,9 @@
 #include "pch.h"
 
 #include "url.h"
-#include "veh.h"
 #include "curl.h"
 #include "defs.h"
+#include "veh.h"
 
 //globals
 static void* UnsafeEnvironmentPopupAddress;
@@ -122,9 +122,9 @@ namespace Hooks
 
 		if (VEH::Init())
 		{
-			VEH::Hook((uintptr_t)UnsafeEnvironmentPopupAddress, (uintptr_t)UnsafeEnvironmentPopupHook);
-			VEH::Hook((uintptr_t)RequestExitAddress, (uintptr_t)RequestExitHook);
-			VEH::Hook((uintptr_t)CurlEasyAddress, (uintptr_t)CurlEasySetOptHook);
+			VEH::AddHook(UnsafeEnvironmentPopupAddress, UnsafeEnvironmentPopupHook);
+			VEH::AddHook(RequestExitAddress, RequestExitHook);
+			VEH::AddHook(CurlEasyAddress, CurlEasySetOptHook);
 		}
 	}
 }
