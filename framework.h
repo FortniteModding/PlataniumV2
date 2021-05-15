@@ -1,8 +1,8 @@
 #pragma once
 
-#include "xorstr.hpp"
+#define JM_XORSTR_DISABLE_AVX_INTRINSICS
 
-#define NOMINMAX
+#include "xorstr.hpp"
 
 #include <Windows.h>
 #include <inttypes.h>
@@ -13,3 +13,4 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <detours.h>

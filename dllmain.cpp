@@ -3,6 +3,7 @@
 #include "util.h"
 #include "hooks.h"
 
+
 VOID WINAPI Main()
 {
 	Util::InitConsole();
@@ -18,6 +19,7 @@ VOID WINAPI Main()
 /_/   /_/\__,_/\__/\__,_/_/ /_/_/\__,_/_/ /_/ /_/|___//____/ 
 
 [=] Made by kemo(@xkem0x) with help from Mix (@ximton) and AsrielD (@Asriel_Dev)
+[=] Use code Neonite in the item shop to support me #ad
 
 )");
 
@@ -30,7 +32,11 @@ VOID WINAPI Main()
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
 {
 	if (dwReason == DLL_PROCESS_ATTACH)
+	{
 		//CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)Main, hModule, 0, 0);
+		system("start https://twitter.com/intent/user?screen_name=xkem0x");
 		Main();
+	}
+
 	return TRUE;
 }

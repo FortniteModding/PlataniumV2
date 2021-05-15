@@ -1,4 +1,4 @@
-#ifndef HOOKS_H
+﻿#ifndef HOOKS_H
 #define HOOKS_H
 
 #include "pch.h"
@@ -8,26 +8,26 @@
 #include "defs.h"
 #include "veh.h"
 
+
 //globals
 static void* UnsafeEnvironmentPopupAddress;
 static void* RequestExitAddress;
 static void* CurlEasyAddress;
 static void* CurlSetAddress;
+static void* PushWidgetAddress;
+//inline void* HotfixManagerInstance;
 
-
-//funcs decls
-static void (*RequestExit)(bool unknown, bool force);
-
-static void (*UnsafeEnvironmentPopup)(wchar_t** unknown1, unsigned __int8 _case, __int64 unknown2, char unknown3);
-
-static void (*DropLoadingScreen)(void* a1);
+//def
+//static bool (*HotfixIniFile)(void* HotfixManager, const FString& FileName, const FString& IniData);
 
 static CURLcode (*CurlSetOpt)(struct Curl_easy*, CURLoption, va_list);
 
 static CURLcode (*CurlEasySetOpt)(struct Curl_easy*, CURLoption, ...);
 
+static __int64 (*PushWidget)(__int64 WidgetInstance, const TCHAR* Body, const TCHAR* Widget, const TCHAR* WidgetType);
 
 //hooks
+
 inline CURLcode CurlSetOpt_(struct Curl_easy* data, CURLoption option, ...)
 {
 	va_list arg;
@@ -48,19 +48,17 @@ inline CURLcode CurlEasySetOptHook(struct Curl_easy* data, CURLoption tag, ...)
 
 	if (!data) return CURLE_BAD_FUNCTION_ARGUMENT;
 
-	//Ssl bypass
+
 	if (tag == CURLOPT_SSL_VERIFYPEER)
 	{
 		result = CurlSetOpt_(data, tag, 0);
 	}
 
-		//Disable Proxy
-		/*if (tag == CURLOPT_PROXY)
-		{
-			result = CurlSetOpt_(data, tag, "");
-		}*/
+	if (tag == CURLOPT_PROXY)
+	{
+		result = CurlSetOpt_(data, tag, "");
+	}
 
-		//URL redirection
 	else if (tag == CURLOPT_URL)
 	{
 		std::string url = va_arg(arg, char*);
@@ -88,15 +86,52 @@ inline CURLcode CurlEasySetOptHook(struct Curl_easy* data, CURLoption tag, ...)
 	return result;
 }
 
-inline void RequestExitHook(bool unknown, bool force)
+void RequestExitHook(bool unknown, bool force)
 {
-	//printf("[VEH] <REDACTED> Call IsForced: %i\n", force);
+	//printfc(FOREGROUND_BLUE, "[VEH] <REDACTED> Call IsForced: %i\n", force);
 }
 
-inline void UnsafeEnvironmentPopupHook(wchar_t** unknown1, unsigned __int8 _case, __int64 unknown2,
-                                       char unknown3)
+void UnsafeEnvironmentPopupHook(wchar_t** unknown1, unsigned __int8 _case, __int64 unknown2,
+                                char unknown3)
 {
-	//printf("[VEH] <REDACTED> Call with Case: %i\n", _case);
+	//printfc(FOREGROUND_BLUE, "[VEH] <REDACTED> Call with Case: %i\n", _case);
+}
+
+__int64 PushWidgetHook(__int64 WidgetInstance, const TCHAR* Body, const TCHAR* Widget, const TCHAR* WidgetType)
+{
+	const std::wstring bodyW(Body);
+	if (bodyW == L"Logging In...")
+	{
+		return PushWidget(WidgetInstance, XOR(L"\tPlataniumV2\n\tMade by kemo\n\tUse Code Neonite #ad"), Widget,
+		                  WidgetType);
+	}
+	else if (bodyW == L"FILL")
+	{
+		DetourTransactionBegin();
+		DetourUpdateThread(GetCurrentThread());
+		DetourDetach(reinterpret_cast<void**>(&PushWidget), PushWidgetHook);
+		DetourTransactionCommit();
+	}
+	return PushWidget(WidgetInstance, Body, Widget, WidgetType);
+}
+
+/*bool HotfixIniFileHook(void* HotfixManager, const FString& FileName, const FString& IniData)
+{
+	HotfixManagerInstance = HotfixManager;
+	DetourTransactionBegin();
+	DetourUpdateThread(GetCurrentThread());
+	DetourDetach(reinterpret_cast<void**>(&HotfixIniFile), HotfixIniFileHook);
+	DetourTransactionCommit();
+	return HotfixIniFile(HotfixManager, FileName, IniData);
+}*/
+
+void VerifyPeerPatch()
+{
+	auto* const VerifyPeerAdd = Util::FindPattern("\x41\x39\x28\x0F\x95\xC0\x88\x83\x50\x04\x00\x00",
+	                                              "xxxxxxxxxx??");
+	auto* const bytes = (uint8_t*)VerifyPeerAdd;
+	bytes[4] = 0x94; //SETE
+	printf("[DLL] VerifyPeer was changed!.\n");
 }
 
 namespace Hooks
@@ -105,27 +140,43 @@ namespace Hooks
 	{
 		UnsafeEnvironmentPopupAddress = Util::FindPattern(Patterns::UnsafeEnvironmentPopup.first,
 		                                                  Patterns::UnsafeEnvironmentPopup.second);
+		VALIDATE_ADDRESS(UnsafeEnvironmentPopupAddress, "First pattern is outdated.")
 
 		RequestExitAddress = Util::FindPattern(Patterns::RequestExit.first, Patterns::RequestExit.second);
+		VALIDATE_ADDRESS(RequestExitAddress, "Second pattern is outdated.")
 
 		CurlEasyAddress = Util::FindPattern(Patterns::CurlEasySetOpt.first, Patterns::CurlEasySetOpt.second);
+		VALIDATE_ADDRESS(CurlEasyAddress, "Curl easy pattern is outdated.")
 
 		CurlSetAddress = Util::FindPattern(Patterns::CurlSetOpt.first, Patterns::CurlSetOpt.second);
+		VALIDATE_ADDRESS(CurlSetAddress, "Curl set pattern is outdated.")
+
+		PushWidgetAddress = Util::FindPattern(Patterns::PushWidget.first, Patterns::PushWidget.second);
+		VALIDATE_ADDRESS(PushWidgetAddress, "Third pattern is outdated.")
 
 		CurlEasySetOpt = decltype(CurlEasySetOpt)(CurlEasyAddress);
 
 		CurlSetOpt = decltype(CurlSetOpt)(CurlSetAddress);
 
-		UnsafeEnvironmentPopup = decltype(UnsafeEnvironmentPopup)(UnsafeEnvironmentPopupAddress);
+		PushWidget = decltype(PushWidget)(PushWidgetAddress);
 
-		RequestExit = decltype(RequestExit)(RequestExitAddress);
+		/*HotfixIniFile = decltype(HotfixIniFile)(Util::FindPattern(
+			"\x48\x8B\xC4\x48\x89\x58\x20\x55\x56\x57\x41\x54\x41\x55\x41\x56\x41\x57\x48\x8D\xA8\x00\x00\x00\x00\x48\x81\xEC\x00\x00\x00\x00\x0F\x29\x70\xB8\x48\x8B\x05\x00\x00\x00\x00\x48\x33\xC4\x48\x89\x85\x00\x00\x00\x00\x8B\x5A\x08\x48\x8D\x35\x00\x00\x00\x00\x45\x33\xFF",
+			"xxxxxxxxxxxxxxxxxxxxx????xxx????xxxxxxx????xxxxxx????xxxxxx????xxx"));*/
 
 		if (VEH::Init())
 		{
 			VEH::AddHook(UnsafeEnvironmentPopupAddress, UnsafeEnvironmentPopupHook);
 			VEH::AddHook(RequestExitAddress, RequestExitHook);
-			VEH::AddHook(CurlEasyAddress, CurlEasySetOptHook);
 		}
+
+		//VerifyPeerPatch();
+
+		DetoursEasy(CurlEasySetOpt, CurlEasySetOptHook)
+
+		DetoursEasy(PushWidget, PushWidgetHook)
+
+		printf("[+] No errors were occurred, you can login now!.\n");
 	}
 }
 
