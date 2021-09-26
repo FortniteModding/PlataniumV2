@@ -47,7 +47,8 @@ inline CURLcode CurlEasySetOptHook(struct Curl_easy* data, CURLoption tag, ...)
 
 	CURLcode result = {};
 
-	if (!data) return CURLE_BAD_FUNCTION_ARGUMENT;
+	if (!data)
+		return CURLE_BAD_FUNCTION_ARGUMENT;
 
 
 	if (tag == CURLOPT_SSL_VERIFYPEER)
@@ -100,8 +101,10 @@ void RequestExitHook(bool force)
 	printfc(FOREGROUND_BLUE, "[VEH] RequestExit Call IsForced: %i\n", force);
 }
 
-void UnsafeEnvironmentPopupHook(wchar_t** unknown1, unsigned __int8 _case, __int64 unknown2,
-                                char unknown3)
+void UnsafeEnvironmentPopupHook(wchar_t** unknown1,
+	unsigned __int8 _case,
+	__int64 unknown2,
+	char unknown3)
 {
 	//printfc(FOREGROUND_BLUE, "[VEH] <REDACTED> Call with Case: %i\n", _case);
 }
@@ -111,8 +114,10 @@ __int64 PushWidgetHook(__int64 WidgetInstance, const TCHAR* Body, const TCHAR* W
 	const std::wstring bodyW(Body);
 	if (bodyW == L"Logging In...")
 	{
-		return PushWidget(WidgetInstance, XOR(L"\tPlataniumV2\n\tMade by kemo\n\tUse Code Neonite #ad"), Widget,
-		                  WidgetType);
+		return PushWidget(WidgetInstance,
+			XOR(L"\tPlataniumV2\n\tMade by kemo\n\tUse Code Neonite #ad"),
+			Widget,
+			WidgetType);
 	}
 	else if (bodyW == L"FILL")
 	{
@@ -137,7 +142,7 @@ __int64 PushWidgetHook(__int64 WidgetInstance, const TCHAR* Body, const TCHAR* W
 void VerifyPeerPatch()
 {
 	auto* const VerifyPeerAdd = Util::FindPattern("\x41\x39\x28\x0F\x95\xC0\x88\x83\x50\x04\x00\x00",
-	                                              "xxxxxxxxxx??");
+		"xxxxxxxxxx??");
 	auto* const bytes = (uint8_t*)VerifyPeerAdd;
 	bytes[4] = 0x94; //SETE
 	printf("[DLL] VerifyPeer was changed!.\n");
@@ -148,11 +153,11 @@ namespace Hooks
 	inline void Init()
 	{
 		UnsafeEnvironmentPopupAddress = Util::FindPattern(Patterns::UnsafeEnvironmentPopup.first,
-		                                                  Patterns::UnsafeEnvironmentPopup.second);
+			Patterns::UnsafeEnvironmentPopup.second);
 		VALIDATE_ADDRESS(UnsafeEnvironmentPopupAddress, "First pattern is outdated.")
 
 		RequestExitWithStatusAddress = Util::FindPattern(Patterns::RequestExitWithStatus.first,
-		                                                 Patterns::RequestExitWithStatus.second);
+			Patterns::RequestExitWithStatus.second);
 		VALIDATE_ADDRESS(RequestExitWithStatusAddress, "Second pattern is outdated.")
 
 		RequestExitAddress = Util::FindPattern(
@@ -179,14 +184,19 @@ namespace Hooks
 			"\x48\x8B\xC4\x48\x89\x58\x20\x55\x56\x57\x41\x54\x41\x55\x41\x56\x41\x57\x48\x8D\xA8\x00\x00\x00\x00\x48\x81\xEC\x00\x00\x00\x00\x0F\x29\x70\xB8\x48\x8B\x05\x00\x00\x00\x00\x48\x33\xC4\x48\x89\x85\x00\x00\x00\x00\x8B\x5A\x08\x48\x8D\x35\x00\x00\x00\x00\x45\x33\xFF",
 			"xxxxxxxxxxxxxxxxxxxxx????xxx????xxxxxxx????xxxxxx????xxxxxx????xxx"));*/
 
-		if (VEH::Init())
+		/*if (VEH::Init())
 		{
 			VEH::AddHook(UnsafeEnvironmentPopupAddress, UnsafeEnvironmentPopupHook);
 			VEH::AddHook(RequestExitWithStatusAddress, RequestExitWithStatusHook);
 			VEH::AddHook(RequestExitAddress, RequestExitHook);
-		}
+		}*/
 
 		//VerifyPeerPatch();
+
+
+		DetoursEasy(UnsafeEnvironmentPopupAddress, UnsafeEnvironmentPopupHook);
+		DetoursEasy(RequestExitWithStatusAddress, RequestExitWithStatusHook);
+		DetoursEasy(RequestExitAddress, RequestExitHook);
 
 		DetoursEasy(CurlEasySetOpt, CurlEasySetOptHook)
 
