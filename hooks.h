@@ -12,7 +12,6 @@
 //globals
 static void* UnsafeEnvironmentPopupAddress;
 static void* RequestExitWithStatusAddress;
-static void* RequestExitAddress;
 static void* CurlEasyAddress;
 static void* CurlSetAddress;
 static void* PushWidgetAddress;
@@ -91,14 +90,9 @@ inline CURLcode CurlEasySetOptHook(struct Curl_easy* data, CURLoption tag, ...)
 	return result;
 }
 
-void RequestExitWithStatusHook(bool unknown, bool force)
+void RequestExitWithStatusHook(bool Force, uint8_t ReturnCode)
 {
-	//printfc(FOREGROUND_BLUE, "[VEH] <REDACTED> Call IsForced: %i\n", force);
-}
-
-void RequestExitHook(bool force)
-{
-	printfc(FOREGROUND_BLUE, "[VEH] RequestExit Call IsForced: %i\n", force);
+	printfc(FOREGROUND_BLUE, "[VEH] RequestExitWithStatusHook Call Force: %i ReturnCode: %u\n", Force, ReturnCode);
 }
 
 void UnsafeEnvironmentPopupHook(wchar_t** unknown1,
@@ -152,24 +146,29 @@ namespace Hooks
 {
 	inline void Init()
 	{
-		UnsafeEnvironmentPopupAddress = Util::FindPattern(Patterns::UnsafeEnvironmentPopup.first,
-			Patterns::UnsafeEnvironmentPopup.second);
-		VALIDATE_ADDRESS(UnsafeEnvironmentPopupAddress, "First pattern is outdated.")
+		UnsafeEnvironmentPopupAddress = Util::FindPattern(Patterns::UnsafeEnvironmentPopup_UE5.first,
+			Patterns::UnsafeEnvironmentPopup_UE5.second);
+		if (!UnsafeEnvironmentPopupAddress)
+		{
+			UnsafeEnvironmentPopupAddress = Util::FindPattern(Patterns::UnsafeEnvironmentPopup.first,
+				Patterns::UnsafeEnvironmentPopup.second);
+			VALIDATE_ADDRESS(UnsafeEnvironmentPopupAddress, "UnsafeEnvironmentPopup pattern is outdated.")
+		}
 
-		RequestExitWithStatusAddress = Util::FindPattern(Patterns::RequestExitWithStatus.first,
-			Patterns::RequestExitWithStatus.second);
-		VALIDATE_ADDRESS(RequestExitWithStatusAddress, "Second pattern is outdated.")
-
-		RequestExitAddress = Util::FindPattern(
-			"\x40\x53\x48\x83\xEC\x30\x41\xB9\x00\x00\x00\x00\x0F\xB6\xD9\x44\x38\x0D\x00\x00\x00\x00\x72\x20\x48\x8D\x05\x00\x00\x00\x00\x89\x5C\x24\x28\x4C\x8D\x05\x00\x00\x00\x00\x48\x89\x44\x24\x00\x33\xD2\x33\xC9\xE8\x00\x00\x00\x00",
-			"xxxxxxxx????xxxxxx????xxxxx????xxxxxxx????xxxx?xxxxx????");
-		VALIDATE_ADDRESS(RequestExitAddress, "SecondV2 pattern is outdated.")
+		RequestExitWithStatusAddress = Util::FindPattern(Patterns::RequestExitWithStatus_UE5.first,
+			Patterns::RequestExitWithStatus_UE5.second);
+		if (!RequestExitWithStatusAddress)
+		{
+			RequestExitWithStatusAddress = Util::FindPattern(Patterns::RequestExitWithStatus.first,
+				Patterns::RequestExitWithStatus.second);
+			VALIDATE_ADDRESS(RequestExitWithStatusAddress, "RequestExitWithStatus pattern is outdated.")
+		}
 
 		CurlEasyAddress = Util::FindPattern(Patterns::CurlEasySetOpt.first, Patterns::CurlEasySetOpt.second);
-		VALIDATE_ADDRESS(CurlEasyAddress, "Curl easy pattern is outdated.")
+		VALIDATE_ADDRESS(CurlEasyAddress, "curl_easy_setopt pattern is outdated.")
 
 		CurlSetAddress = Util::FindPattern(Patterns::CurlSetOpt.first, Patterns::CurlSetOpt.second);
-		VALIDATE_ADDRESS(CurlSetAddress, "Curl set pattern is outdated.")
+		VALIDATE_ADDRESS(CurlSetAddress, "curl_setopt pattern is outdated.")
 
 		PushWidgetAddress = Util::FindPattern(Patterns::PushWidget.first, Patterns::PushWidget.second);
 		VALIDATE_ADDRESS(PushWidgetAddress, "Third pattern is outdated.")
@@ -188,7 +187,6 @@ namespace Hooks
 		{
 			VEH::AddHook(UnsafeEnvironmentPopupAddress, UnsafeEnvironmentPopupHook);
 			VEH::AddHook(RequestExitWithStatusAddress, RequestExitWithStatusHook);
-			VEH::AddHook(RequestExitAddress, RequestExitHook);
 		}*/
 
 		//VerifyPeerPatch();
@@ -196,7 +194,6 @@ namespace Hooks
 
 		DetoursEasy(UnsafeEnvironmentPopupAddress, UnsafeEnvironmentPopupHook);
 		DetoursEasy(RequestExitWithStatusAddress, RequestExitWithStatusHook);
-		DetoursEasy(RequestExitAddress, RequestExitHook);
 
 		DetoursEasy(CurlEasySetOpt, CurlEasySetOptHook)
 
